@@ -5,12 +5,23 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -22,13 +33,14 @@ import androidx.navigation.compose.rememberNavController
 import com.ex.androidnavigation.ui.theme.AndroidNavigationTheme
 import kotlinx.serialization.Serializable
 import androidx.compose.ui.tooling.preview.Preview
-import kotlinx.coroutines.launch
 
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        val listStudents = getStudents()
 
         setContent {
 
@@ -53,14 +65,10 @@ class MainActivity : ComponentActivity() {
                         composable<StudentList> {
                             StudentListScreen(
                                 onNavigateToProfile = {
-                                    navController.navigate(Profile)
+                                    navController.navigate("profile")
                                 },
-                                onStudentClick = { student, index, showSnackbar ->
-                                    if (index == 1) {
-                                        navController.navigate("studentInfo/${student.name}/${student.nim}/${student.email}/${student.grade}")
-                                    } else {
-                                        showSnackbar("Hanya mahasiswa di urutan kedua yang dapat ditampilkan")
-                                    }
+                                onStudentClick = { student ->
+                                    navController.navigate("studentInfo/${student.name}/${student.nim}/${student.email}/${student.grade}")
                                 }
                             )
                         }
@@ -130,42 +138,32 @@ fun ProfileScreen(modifier: Modifier = Modifier,
 @Composable
 fun StudentListScreen(
     onNavigateToProfile: () -> Unit,
-    onStudentClick: (MainActivity.Student, Int, (String) -> Unit) -> Unit
+    onStudentClick: (MainActivity.Student) -> Unit
 ) {
     val students = remember { MainActivity.getStudents() }
-    val snackbarHostState = remember { SnackbarHostState() }
-    val coroutineScope = rememberCoroutineScope()
-
-    Scaffold(
-        snackbarHost = { SnackbarHost(hostState = snackbarHostState) }) { innerPadding ->
-        Column(modifier = Modifier.padding(innerPadding).padding(16.dp).fillMaxHeight()) {
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-                Button(onClick = onNavigateToProfile) {
-                    Icon(imageVector = Icons.Default.KeyboardArrowLeft, contentDescription = "Back")
-                    Text("Back to Profile")
-                }
+    Column(modifier = Modifier.padding(16.dp).fillMaxHeight()) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+            Button(onClick = onNavigateToProfile) {
+                Icon(imageVector = Icons.Default.KeyboardArrowLeft, contentDescription = "Back")
+                Text("Back to Profile")
             }
-            LazyColumn(modifier = Modifier.weight(1f)) {
-                items(students.size) { index ->
-                    val student = students[index]
-                    Column(
-                        modifier = Modifier.fillMaxWidth().padding(8.dp).clickable {
-                            onStudentClick(student, index) { message ->
-                                coroutineScope.launch {
-                                    snackbarHostState.showSnackbar(message)
-                                }
-                            }
-                        }
-                    ) {
-                        Text(text = student.name,
-                            fontSize = 18.sp, //mengatur ukuran text menjadi 18 sp
-                            color = Color(0xFFFF0000)) //mengatur warna text menjadi merah
-                        Text(text = student.nim)
-                        Text(text = student.email)
-                        Text(text = student.grade.toString())
+        }
+        LazyColumn(modifier = Modifier.weight(1f)) {
+            items(students.size) { index ->
+                val student = students[index]
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(8.dp).clickable {
+                        onStudentClick(student)
                     }
-                    HorizontalDivider(thickness = 1.dp)
+                ) {
+                    Text(text = student.name,
+                        fontSize = 18.sp, //mengatur ukuran text menjadi 18 sp
+                        color = Color(0xFFFF0000)) //mengatur warna text menjadi merah
+                    Text(text = student.nim)
+                    Text(text = student.email)
+                    Text(text = student.grade.toString())
                 }
+                HorizontalDivider(thickness = 1.dp)
             }
         }
     }
@@ -180,7 +178,7 @@ fun ProfilePreview() {
 @Preview
 @Composable
 fun StudentListPreview () {
-    StudentListScreen(onNavigateToProfile = {}, onStudentClick = {} as (MainActivity.Student, Int, (String) -> Unit) -> Unit)
+    StudentListScreen(onNavigateToProfile = {}, onStudentClick = {})
 }
 
 @Composable
